@@ -2,6 +2,7 @@ package serviceNow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -65,6 +66,44 @@ public class NSRolesRestServiceController
             String bla = new BufferedReader(new InputStreamReader(connection.getInputStream())).readLine();
 
             return bla;
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
+    private String getRESTAPIData(String nsEmail, String nsPassword, String table, String url)
+    {
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+//            String jsonInString = mapper.writeValueAsString(sObj);
+
+            CloseableHttpClient client = HttpClients.createDefault();
+            HttpGet httpPost = new HttpGet(url);
+
+//            StringEntity entity = new StringEntity(jsonInString);
+//            httpPost.setEntity(entity);
+            httpPost.setHeader("Accept", "application/json");
+            httpPost.setHeader("Content-type", "application/json");
+            httpPost.setHeader("Authorization", buildNLAuthString(nsEmail, nsPassword));
+
+            CloseableHttpResponse httpResponse = client.execute(httpPost);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    httpResponse.getEntity().getContent()));
+
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = reader.readLine()) != null)
+            {
+                response.append(inputLine);
+            }
+            reader.close();
+            client.close();
+            return response.toString();
         }
         catch (Exception ex)
         {
