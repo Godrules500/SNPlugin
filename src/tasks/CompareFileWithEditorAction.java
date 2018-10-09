@@ -23,18 +23,22 @@ import org.jetbrains.annotations.Nullable;
 public class CompareFileWithEditorAction extends BaseShowDiffAction
 {
     @Override
-    protected boolean isAvailable(@NotNull AnActionEvent e) {
+    protected boolean isAvailable(@NotNull AnActionEvent e)
+    {
         VirtualFile selectedFile = getSelectedFile(e);
-        if (selectedFile == null) {
+        if (selectedFile == null)
+        {
             return false;
         }
 
         VirtualFile currentFile = getEditingFile(e);
-        if (currentFile == null) {
+        if (currentFile == null)
+        {
             return false;
         }
 
-        if (!canCompare(selectedFile, currentFile)) {
+        if (!canCompare(selectedFile, currentFile))
+        {
             return false;
         }
 
@@ -42,9 +46,11 @@ public class CompareFileWithEditorAction extends BaseShowDiffAction
     }
 
     @Nullable
-    private static VirtualFile getSelectedFile(@NotNull AnActionEvent e) {
+    private static VirtualFile getSelectedFile(@NotNull AnActionEvent e)
+    {
         VirtualFile[] array = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
-        if (array == null || array.length != 1 || array[0].isDirectory()) {
+        if (array == null || array.length != 1 || array[0].isDirectory())
+        {
             return null;
         }
 
@@ -52,7 +58,8 @@ public class CompareFileWithEditorAction extends BaseShowDiffAction
     }
 
     @Nullable
-    private static VirtualFile getEditingFile(@NotNull AnActionEvent e) {
+    private static VirtualFile getEditingFile(@NotNull AnActionEvent e)
+    {
         Project project = e.getProject();
         if (project == null) return null;
 
@@ -62,13 +69,15 @@ public class CompareFileWithEditorAction extends BaseShowDiffAction
         return editor == null ? null : editor.getFile();
     }
 
-    private static boolean canCompare(@NotNull VirtualFile file1, @NotNull VirtualFile file2) {
+    private static boolean canCompare(@NotNull VirtualFile file1, @NotNull VirtualFile file2)
+    {
         return !file1.equals(file2) && hasContent(file1) && hasContent(file2);
     }
 
     @Nullable
     @Override
-    protected DiffRequest getDiffRequest(@NotNull AnActionEvent e) {
+    protected DiffRequest getDiffRequest(@NotNull AnActionEvent e)
+    {
         Project project = e.getProject();
 
         VirtualFile selectedFile = getSelectedFile(e);
@@ -79,9 +88,11 @@ public class CompareFileWithEditorAction extends BaseShowDiffAction
         ContentDiffRequest request = DiffRequestFactory.getInstance().createFromFiles(project, selectedFile, currentFile);
 
         DiffContent editorContent = request.getContents().get(1);
-        if (editorContent instanceof DocumentContent) {
-            Editor[] editors = EditorFactory.getInstance().getEditors(((DocumentContent)editorContent).getDocument());
-            if (editors.length != 0) {
+        if (editorContent instanceof DocumentContent)
+        {
+            Editor[] editors = EditorFactory.getInstance().getEditors(((DocumentContent) editorContent).getDocument());
+            if (editors.length != 0)
+            {
                 request.putUserData(DiffUserDataKeys.SCROLL_TO_LINE, Pair.create(Side.RIGHT, editors[0].getCaretModel().getLogicalPosition().line));
             }
         }

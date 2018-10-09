@@ -1,6 +1,6 @@
 /**
  * @SNType sys_script_include
- * @SNApp script_created
+ * @SNApp test_git
  * @SNName test_compare
  */
 //asdfasdfasdf
