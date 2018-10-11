@@ -8,6 +8,7 @@ import org.codehaus.jettison.json.JSONObject;
 import projectsettings.ProjectSettingsController;
 
 import java.io.*;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -112,7 +113,57 @@ public class SNClient
         bw.close();
     }
 
+    public Boolean authenticateApi(String userName, String password, String url) throws RemoteException
+    {
+        try
+        {
+            SendObject sObj = new SendObject("authenticate", "");
+            url += "/api/now/table/sys_db_object?sysparm_limit=1";
+            String response = nsRolesRestServiceController.getNSAccountsApi(userName, password, url, sObj);
+
+//            JSONObject jsonObj = new JSONObject(response);
+
+            // print result
+            if(getJsonObjectApi(response).length() >= 1)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
     public String downloadFile(String fileData, Project project) throws RemoteException
+    {
+        try
+        {
+            FileParser fp = new FileParser(fileData);
+            settings = new ProjectSettingsController(project);
+            String password = settings.getProjectPassword();
+
+            SendObject sObj = new SendObject("compare", fileData);
+            String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
+            String queryParam = "?sysparm_query=sys_scope.name=" + URLEncoder.encode(fp.AppName + "^sys_name=" + fp.FileName, "UTF-8");
+            url += queryParam;
+            String response = nsRolesRestServiceController.getNSAccountsApi(this.nsUserName, password, url, sObj);
+            JSONObject obj = (JSONObject)(getJsonObjectApi(response).get(0));
+            return obj.getString("script");
+//            return getJsonObjectApi(response).getString(0);//.getString("fileData");
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
+    public String downloadFileOld(String fileData, Project project) throws RemoteException
     {
         try
         {
@@ -198,6 +249,13 @@ public class SNClient
         {
             return null;
         }
+    }
+
+    private JSONArray getJsonObjectApi(String response) throws JSONException
+    {
+        JSONObject obj = new JSONObject(response);
+        JSONArray jsonObj = obj.getJSONArray("result");
+        return jsonObj;
     }
 
     private JSONObject getJsonObject(String response) throws JSONException

@@ -108,19 +108,19 @@ public class CredentialsUI extends JDialog
 
 
         NSRolesRestServiceController nsRolesRestServiceController = new NSRolesRestServiceController();
-        String nsAccounts = "";
+        Boolean nsAccounts = false;
         try
         {
             this.SNClient = new SNClient(txtUrl.getText(), emailField.getText());
-            nsAccounts = this.SNClient.authenticate(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
+            nsAccounts = this.SNClient.authenticateApi(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
         }
         catch(Exception e)
         {
-            nsAccounts = "";
+            nsAccounts = false;
         }
 //        String nsAccounts = nsRolesRestServiceController.getNSAccounts(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
 
-        if (nsAccounts == null || !nsAccounts.equals("true"))
+        if (nsAccounts == null || nsAccounts.equals(false))
         {
             JOptionPane.showMessageDialog(null, "Error getting Service Now Accounts from Roles Rest Service.\nPlease verify that your e-mail and password are correct.", "ERROR", JOptionPane.ERROR_MESSAGE);
         }

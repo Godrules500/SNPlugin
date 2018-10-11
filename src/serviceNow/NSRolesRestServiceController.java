@@ -149,6 +149,39 @@ public class NSRolesRestServiceController
         }
     }
 
+    private String getNSRolesRestServiceApiJSON(String nsEmail, String nsPassword, String url, SendObject sObj)
+    {
+        try
+        {
+            CloseableHttpClient client = HttpClients.createDefault();
+            HttpGet httpGet = new HttpGet(url);
+
+            httpGet.setHeader("Accept", "application/json");
+            httpGet.setHeader("Content-type", "application/json");
+            httpGet.setHeader("Authorization", buildNLAuthString(nsEmail, nsPassword));
+
+            CloseableHttpResponse httpResponse = client.execute(httpGet);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    httpResponse.getEntity().getContent()));
+
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = reader.readLine()) != null)
+            {
+                response.append(inputLine);
+            }
+            reader.close();
+            client.close();
+            return response.toString();
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
     private String getNSRolesRestServiceJSON(String nsEmail, String nsPassword, String url)
     {
         try
@@ -242,6 +275,17 @@ public class NSRolesRestServiceController
         if (nsEmail != null && !nsEmail.isEmpty() && nsPassword != null && !nsPassword.isEmpty())
         {
             return getNSRolesRestServiceJSON(nsEmail, nsPassword, url, sObj);
+//            return getNSAccountsList(getNSRolesRestServiceJSON(nsEmail, nsPassword, url), nsEmail, nsPassword);
+        }
+
+        return null;
+    }
+
+    public String getNSAccountsApi(String nsEmail, String nsPassword, String url, SendObject sObj)
+    {
+        if (nsEmail != null && !nsEmail.isEmpty() && nsPassword != null && !nsPassword.isEmpty())
+        {
+            return getNSRolesRestServiceApiJSON(nsEmail, nsPassword, url, sObj);
 //            return getNSAccountsList(getNSRolesRestServiceJSON(nsEmail, nsPassword, url), nsEmail, nsPassword);
         }
 
