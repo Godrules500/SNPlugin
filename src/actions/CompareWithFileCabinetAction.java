@@ -41,8 +41,8 @@ public class CompareWithFileCabinetAction extends AnAction
 
         ProjectSettingsController projectSettingsController = new ProjectSettingsController(project);
 
-        String currentEnvironment = projectSettingsController.getNsEnvironment();
-        String currentUserName = projectSettingsController.getNsEmail();
+        String currentEnvironment = projectSettingsController.getUrl();
+        String currentUserName = projectSettingsController.getUserName();
 
         final SNClient SNClient;
 

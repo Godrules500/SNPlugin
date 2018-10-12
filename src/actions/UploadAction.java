@@ -34,8 +34,8 @@ public class UploadAction extends AnAction
 
         ProjectSettingsController projectSettingsController = new ProjectSettingsController(project);
 
-        String currentEnvironment = projectSettingsController.getNsEnvironment();
-        String currentUser = projectSettingsController.getNsEmail();
+        String currentEnvironment = projectSettingsController.getUrl();
+        String currentUser = projectSettingsController.getUserName();
 
 //        NSAccount nsAccount = projectSettingsController.getNSAccountForProject();
 //

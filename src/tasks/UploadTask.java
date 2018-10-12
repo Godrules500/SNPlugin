@@ -16,7 +16,6 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
-import org.codehaus.jettison.json.JSONObject;
 import projectsettings.ProjectSettingsController;
 
 import javax.swing.*;
@@ -89,9 +88,9 @@ public class UploadTask implements Runnable
                     progessIndicator.setText("Uploading File: " + file.getName());
                     try
                     {
-                        JSONObject response = SNClient.uploadFile(file, this.project);
-                        Boolean result = (Boolean) response.get("success");
-//                        WriteResponse response = SNClient.uploadFile(file.getName(), file.getPath(), SNClient.searchFile(file.getName(), fileNetSuiteParentFolderId, projectSettingsController.getNsRootFolder()), fileNetSuiteParentFolderId, "");
+                        Boolean result = SNClient.startUploadFile(file, this.project);
+//                        Boolean result = (Boolean) response.get("success");
+//                        WriteResponse response = SNClient.startUploadFile(file.getName(), file.getPath(), SNClient.searchFile(file.getName(), fileNetSuiteParentFolderId, projectSettingsController.getNsRootFolder()), fileNetSuiteParentFolderId, "");
 //                        if (!response.getStatus().isIsSuccess())
                         if(result.equals(true))
                         {
@@ -197,7 +196,7 @@ public class UploadTask implements Runnable
             }
         });
 
-        ApplicationManager.getApplication().invokeLater(new Runnable()
+        ApplicationManager.getApplication().invokeAndWait(new Runnable()
         {
             @Override
             public void run()

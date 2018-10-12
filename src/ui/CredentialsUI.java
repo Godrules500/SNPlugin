@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
+import org.codehaus.jettison.json.JSONObject;
 import projectsettings.ProjectSettingsController;
 import serviceNow.NSRolesRestServiceController;
 import serviceNow.SNClient;
@@ -44,8 +45,8 @@ public class CredentialsUI extends JDialog
             String nsPassword = projectSettingsController.getProjectPassword();
             if (nsPassword != null && !nsPassword.isEmpty())
             {
-                emailField.setText(projectSettingsController.getNsEmail());
-                txtUrl.setText(projectSettingsController.getNsEnvironment());
+                emailField.setText(projectSettingsController.getUserName());
+                txtUrl.setText(projectSettingsController.getUrl());
                 passwordField.setText(nsPassword);
             }
         }
@@ -84,16 +85,17 @@ public class CredentialsUI extends JDialog
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
-    private void saveProjectSettings()
+    private void saveProjectSettings(String companyCode)
     {
         String email = emailField.getText();
         String url = txtUrl.getText();
         String password = String.valueOf(passwordField.getPassword());
 
         ProjectSettingsController nsProjectSettingsController = new ProjectSettingsController(this.project);
-        nsProjectSettingsController.setNsEmail(emailField.getText());
+        nsProjectSettingsController.setUserName(emailField.getText());
         nsProjectSettingsController.setNsEnvironment(txtUrl.getText());
         nsProjectSettingsController.saveProjectPassword(email, password, url);
+        nsProjectSettingsController.setCompanyCode(companyCode);
     }
 
     private void onNext()
@@ -108,25 +110,42 @@ public class CredentialsUI extends JDialog
 
 
         NSRolesRestServiceController nsRolesRestServiceController = new NSRolesRestServiceController();
-        Boolean nsAccounts = false;
+        JSONObject nsAccounts;
+        Boolean success = false;
+        String companyCode = "";
+        String error = "";
         try
         {
             this.SNClient = new SNClient(txtUrl.getText(), emailField.getText());
             nsAccounts = this.SNClient.authenticateApi(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
+            if(nsAccounts != null)
+            {
+                success = (Boolean)nsAccounts.get("success");
+                if(nsAccounts.has("companyCode"))
+                {
+                    companyCode = nsAccounts.getString("companyCode");
+                }
+                else if(nsAccounts.has("error"))
+                {
+                    error = nsAccounts.getString("error");
+                }
+            }
         }
         catch(Exception e)
         {
-            nsAccounts = false;
+            nsAccounts = null;
         }
 //        String nsAccounts = nsRolesRestServiceController.getNSAccounts(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
 
-        if (nsAccounts == null || nsAccounts.equals(false))
+        if (nsAccounts == null || success.equals(false))
         {
-            JOptionPane.showMessageDialog(null, "Error getting Service Now Accounts from Roles Rest Service.\nPlease verify that your e-mail and password are correct.", "ERROR", JOptionPane.ERROR_MESSAGE);
+//            JOptionPane.showMessageDialog(null, "Error getting Service Now Accounts from Roles Rest Service.\nPlease verify that your e-mail and password are correct.", "ERROR", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Error authenticating Service Now Credentials. Please check your configuration and try again.\n" +
+                    error, "ERROR", JOptionPane.ERROR_MESSAGE);
         }
         else
         {
-            saveProjectSettings();
+            saveProjectSettings(companyCode);
             JBPopupFactory.getInstance()
                     .createHtmlTextBalloonBuilder("<h3>Service Now Project Settings Updated!</h3>", MessageType.INFO, null)
                     .setFadeoutTime(3000)
@@ -134,13 +153,6 @@ public class CredentialsUI extends JDialog
                     .show(RelativePoint.getNorthEastOf(WindowManager.getInstance().getIdeFrame(project).getComponent()),
                             Balloon.Position.above);
         }
-
-
-        //AccountsUI accountsUI = new AccountsUI(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText(), this.project);
-//
-//        if (accountsUI.getNsAccounts() != null) {
-//
-//        }
 
         dispose();
     }

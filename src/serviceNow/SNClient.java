@@ -2,6 +2,7 @@ package serviceNow;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import controller.JSONController;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -13,8 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 //import jdk.nashorn.internal.parser.JSONParser;
@@ -27,7 +26,7 @@ public class SNClient
 
     private String nsEnvironment;
     private String nsUserName;
-    NSRolesRestServiceController nsRolesRestServiceController = new NSRolesRestServiceController();
+    NSRolesRestServiceController snRestService = new NSRolesRestServiceController();
     ProjectSettingsController settings;
 
     public SNClient(String environment, String userName)
@@ -75,9 +74,9 @@ public class SNClient
         try
         {
             SendObject sObj = new SendObject("authenticate", "");
-            String response = nsRolesRestServiceController.getNSAccounts(userName, password, url, sObj);
+            String response = snRestService.getNSAccounts(userName, password, url, sObj);
 
-//            JSONObject jsonObj = new JSONObject(response);
+//            JSONObject resultObj = new JSONObject(response);
 
             // print result
             return getJsonObject(response).getString("success");
@@ -113,26 +112,32 @@ public class SNClient
         bw.close();
     }
 
-    public Boolean authenticateApi(String userName, String password, String url) throws RemoteException
+    public JSONObject authenticateApi(String userName, String password, String url) throws RemoteException
     {
+        JSONObject returnObj = new JSONObject();
         try
         {
             SendObject sObj = new SendObject("authenticate", "");
-            url += "/api/now/table/sys_db_object?sysparm_limit=1";
-            String response = nsRolesRestServiceController.getNSAccountsApi(userName, password, url, sObj);
+//            url += "/api/now/table/sys_db_object?sysparm_limit=1";
+            url += "/api/now/table/sys_properties?sysparm_query=name%3Dglide.appcreator.company.code&sysparm_limit=1&sysparm_limit=1";
+            String response = snRestService.Get(userName, password, url, sObj);
 
-//            JSONObject jsonObj = new JSONObject(response);
-
-            // print result
-            if(getJsonObjectApi(response).length() >= 1)
+            JSONController jsonController = new JSONController(response);
+            JSONObject resultObj = jsonController.getFirstResult();
+            if (resultObj != null)
             {
-                return true;
+                returnObj.put("success", true);
+                returnObj.put("companyCode", resultObj.getString("value"));
+                return returnObj;
+            }
+            else if (jsonController.errorObj != null)
+            {
+                return jsonController.getError();
             }
             else
             {
-                return false;
+                return returnObj.put("success", false);
             }
-
         }
         catch (Exception ex)
         {
@@ -149,11 +154,9 @@ public class SNClient
             String password = settings.getProjectPassword();
 
             SendObject sObj = new SendObject("compare", fileData);
-            String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
-            String queryParam = "?sysparm_query=sys_scope.name=" + URLEncoder.encode(fp.AppName + "^sys_name=" + fp.FileName, "UTF-8");
-            url += queryParam;
-            String response = nsRolesRestServiceController.getNSAccountsApi(this.nsUserName, password, url, sObj);
-            JSONObject obj = (JSONObject)(getJsonObjectApi(response).get(0));
+            String url = getFileUrl(fp);
+            String response = snRestService.Get(this.nsUserName, password, url, sObj);
+            JSONObject obj = (JSONObject) (getJsonObjectApi(response).get(0));
             return obj.getString("script");
 //            return getJsonObjectApi(response).getString(0);//.getString("fileData");
         }
@@ -171,7 +174,7 @@ public class SNClient
             String password = settings.getProjectPassword();
 
             SendObject sObj = new SendObject("compare", fileData);
-            String response = nsRolesRestServiceController.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
+            String response = snRestService.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
 
 //            File myF = new File(getJsonObject(response).getString("fileData"), "test.js");
 
@@ -200,7 +203,7 @@ public class SNClient
 //                JSONObject explrObject = jsonArray.getJSONObject(i);
 //            }
 
-//            JSONObject jsonObj = new JSONObject(response);
+//            JSONObject resultObj = new JSONObject(response);
 
             // print result
 //            return new File(getJsonObject(response).getString("fileData"));
@@ -226,7 +229,7 @@ public class SNClient
         return contentBuilder.toString();
     }
 
-    public JSONObject uploadFile(VirtualFile file, Project project) throws RemoteException
+    public JSONObject uploadFileOld(VirtualFile file, Project project) throws RemoteException
     {
         try
         {
@@ -237,17 +240,137 @@ public class SNClient
             String password = settings.getProjectPassword();
 
             SendObject sObj = new SendObject("upload", fileData);
-            String response = nsRolesRestServiceController.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
+            String response = snRestService.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
 
             return getJsonObject(response);
 
             // print result
-//            return getJsonData(jsonObj, "result");
+//            return getJsonData(resultObj, "result");
 
         }
         catch (Exception ex)
         {
             return null;
+        }
+    }
+
+    public String getFileUrl(FileParser fp) throws UnsupportedEncodingException
+    {
+        String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
+        String queryParam = "?sysparm_query=sys_scope.name=" + URLEncoder.encode(fp.AppName + "^sys_name=" + fp.FileName, "UTF-8");
+        url += queryParam;
+        return url;
+    }
+
+    public String getFileIdUrl(FileParser fp) throws UnsupportedEncodingException
+    {
+        String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
+        String queryParam = "?sysparm_query=sys_scope.name=" + URLEncoder.encode(fp.AppName + "^sys_name=" + fp.FileName, "UTF-8");
+        String fields = "&sysparm_fields=sys_id";
+        url += queryParam + fields;
+
+        return url;
+    }
+
+    public String uploadFileUrl(FileParser fp, String sys_id) throws UnsupportedEncodingException
+    {
+        String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
+        if (!sys_id.isEmpty())
+        {
+            url += "/" + sys_id;
+        }
+
+        return url;
+    }
+
+    public boolean startUploadFile(VirtualFile file, Project project) throws RemoteException
+    {
+        try
+        {
+            String fileData = readLineByLineJava8(file.getPath());
+            settings = new ProjectSettingsController(project);
+            String password = settings.getProjectPassword();
+            FileParser fp = new FileParser(fileData);
+            String url = getFileIdUrl(fp);
+
+            JSONObject obj = checkIfFileExists(fileData, password, url);
+            String sys_id = obj.getString("sys_id");
+            if (!sys_id.isEmpty())
+            {
+                return ModifyFile(fileData, password, fp, sys_id);
+            }
+            else
+            {
+                return AddFile(fileData, password, fp, sys_id, settings.getCompanyCode());
+            }
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
+
+    private String GetAppPrefix(String companyCode)
+    {
+        return "x_" + companyCode + "_";
+    }
+
+    private Boolean AddFile(String fileData, String password, FileParser fp, String sys_id, String companyCode) throws UnsupportedEncodingException, JSONException
+    {
+        String url;
+        String response;
+        JSONObject obj;
+        url = uploadFileUrl(fp, sys_id);
+
+
+        String scope = GetAppPrefix(companyCode) + fp.AppName + "_" + fp.FileName;
+
+        JSONObject sendObj = new JSONObject();
+        sendObj.put(fp.getScriptColumn(), fileData);
+        sendObj.put("source", scope);
+        sendObj.put("scope", scope);
+        sendObj.put("name", fp.FileName);
+        sendObj.put("runtime_access_tracking", "permissive");
+
+        response = snRestService.Post(this.nsUserName, password, url, sendObj);
+        return Boolean.parseBoolean(response);
+//        obj = (JSONObject) (getJsonObjectApi(response).get(0));
+//        obj.getString("script");
+//        return true;
+    }
+
+    private boolean ModifyFile(String fileData, String password, FileParser fp, String sys_id) throws UnsupportedEncodingException, JSONException
+    {
+        String url;
+        String response;
+        JSONObject obj;
+        url = uploadFileUrl(fp, sys_id);
+
+        JSONObject sendObj = new JSONObject();
+        sendObj.put(fp.getScriptColumn(), fileData);
+
+        response = snRestService.Put(this.nsUserName, password, url, sendObj);
+        if (response.equals("true"))
+        {
+            return true;
+        }
+        return false;
+//        obj = (JSONObject) (getJsonObjectApi(response).get(0));
+//        obj.getString("script");
+//        return true;
+    }
+
+    private JSONObject checkIfFileExists(String fileData, String password, String url) throws JSONException
+    {
+        SendObject sObj = new SendObject("upload", fileData);
+        String response = snRestService.Get(this.nsUserName, password, url, sObj);
+        if (getJsonObjectApi(response).length() >= 1)
+        {
+            return (JSONObject) (getJsonObjectApi(response).get(0));
+        }
+        else
+        {
+            return new JSONObject().put("sys_id", "");
         }
     }
 

@@ -35,7 +35,7 @@
       <add-to-group group-id="ProjectViewPopupMenu" anchor="last"  />
       <action id="com.action.serviceNowTools.setupproject" class="actions.SetupProjectAction" text="Set Up Project"
               description="Set Up Project"/>
-      <action id="com.action.serviceNowTools.showprojectsettings" class="actions.ChangeProjectSettingsAction"
+      <action id="com.action.serviceNowTools.showprojectsettings" class="actions.ShowProjectSettingsAction"
               text="Show Project Settings" description="Show Project Settings"/>
       <action id="com.action.serviceNowTools.changeprojectsettings" class="actions.ChangeProjectSettingsAction"
               text="Change Project Settings" description="Change Project Settings"/>

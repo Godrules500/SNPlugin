@@ -5,17 +5,13 @@ import com.intellij.credentialStore.Credentials;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
-import serviceNow.SNClient;
 
 public class ProjectSettingsController
 {
 
-    final private String PROJECT_SETTING_NETSUITE_EMAIL = "nsProjectEmail";
-    final private String PROJECT_SETTING_NETSUITE_ROOT_FOLDER = "nsProjectRootFolder";
-    final private String PROJECT_SETTING_NETSUITE_ACCOUNT = "nsAccount";
-    final private String PROJECT_SETTING_NETSUITE_ACCOUNT_NAME = "nsAccountName";
-    final private String PROJECT_SETTING_NETSUITE_ACCOUNT_ROLE = "nsAccountRole";
-    final private String PROJECT_SETTING_NETSUITE_ENVIRONMENT = "nsEnvironment";
+    final private String PROJECT_SETTING_EMAIL = "nsProjectEmail";
+    final private String PROJECT_SETTING_ENVIRONMENT = "nsEnvironment";
+    final private String PROJECT_SETTING_COMPANYCODE = "nsCompanyCode";
 
     private final PropertiesComponent propertiesComponent;
 
@@ -24,78 +20,42 @@ public class ProjectSettingsController
         this.propertiesComponent = PropertiesComponent.getInstance(project);
     }
 
-    public String getNsEmail()
+    public String getUserName()
     {
-        return propertiesComponent.getValue(PROJECT_SETTING_NETSUITE_EMAIL);
+        return propertiesComponent.getValue(PROJECT_SETTING_EMAIL);
     }
 
-    public void setNsEmail(String nsEmail)
+    public void setUserName(String nsEmail)
     {
         if (nsEmail != null && !nsEmail.isEmpty())
         {
-            propertiesComponent.setValue(PROJECT_SETTING_NETSUITE_EMAIL, nsEmail);
+            propertiesComponent.setValue(PROJECT_SETTING_EMAIL, nsEmail);
         }
     }
 
-    public String getNsAccount()
+    public void setCompanyCode(String companyCode)
     {
-        return propertiesComponent.getValue(PROJECT_SETTING_NETSUITE_ACCOUNT);
-    }
-
-    public void setNsAccount(String nsAccount)
-    {
-        if (nsAccount != null && !nsAccount.isEmpty())
+        if (companyCode != null && !companyCode.isEmpty())
         {
-            propertiesComponent.setValue(PROJECT_SETTING_NETSUITE_ACCOUNT, nsAccount);
+            propertiesComponent.setValue(PROJECT_SETTING_COMPANYCODE, companyCode);
         }
     }
 
-    public String getNsAccountName()
+    public String getCompanyCode()
     {
-        return propertiesComponent.getValue(PROJECT_SETTING_NETSUITE_ACCOUNT_NAME);
+        return propertiesComponent.getValue(PROJECT_SETTING_COMPANYCODE);
     }
 
-    public void setNsAccountName(String nsAccountName)
+    public String getUrl()
     {
-        if (nsAccountName != null && !nsAccountName.isEmpty())
-        {
-            propertiesComponent.setValue(PROJECT_SETTING_NETSUITE_ACCOUNT_NAME, nsAccountName);
-        }
-    }
-
-    public String getNsAccountRole()
-    {
-        return propertiesComponent.getValue(PROJECT_SETTING_NETSUITE_ACCOUNT_ROLE);
-    }
-
-    public void setNsAccountRole(String nsAccountRole)
-    {
-        if (nsAccountRole != null && !nsAccountRole.isEmpty())
-        {
-            propertiesComponent.setValue(PROJECT_SETTING_NETSUITE_ACCOUNT_ROLE, nsAccountRole);
-        }
-    }
-
-    public String getNsEnvironment()
-    {
-        return propertiesComponent.getValue(PROJECT_SETTING_NETSUITE_ENVIRONMENT);
+        return propertiesComponent.getValue(PROJECT_SETTING_ENVIRONMENT);
     }
 
     public void setNsEnvironment(String nsEnvironment)
     {
         if (nsEnvironment != null && !nsEnvironment.isEmpty())
         {
-            propertiesComponent.setValue(PROJECT_SETTING_NETSUITE_ENVIRONMENT, nsEnvironment);
-        }
-    }
-
-    public void saveProjectPassword(SNClient client)
-    {
-        if (client != null)
-        {
-            CredentialAttributes attributes = new CredentialAttributes(client.getNSAccount().getAccountName() + ":" + client.getNSAccount().getAccountId(), client.getNSAccount().getAccountEmail(), this.getClass(), false);
-            Credentials saveCredentials = new Credentials(attributes.getUserName(), client.getNSAccount().getAccountPassword());
-            PasswordSafe.getInstance().set(attributes, saveCredentials);
+            propertiesComponent.setValue(PROJECT_SETTING_ENVIRONMENT, nsEnvironment);
         }
     }
 
@@ -109,40 +69,15 @@ public class ProjectSettingsController
         }
     }
 
-//    public String getProjectPassword() {
-//        CredentialAttributes attributes = new CredentialAttributes(this.getNsAccountName() + ":" + this.getNsAccount(), this.getNsEmail(), this.getClass(), false);
-//        return PasswordSafe.getInstance().getPassword(attributes);
-//    }
-
     public String getProjectPassword()
     {
-        CredentialAttributes attributes = new CredentialAttributes(this.getNsEmail() + ":" + this.getNsEnvironment(), this.getNsEmail(), this.getClass(), false);
+        CredentialAttributes attributes = new CredentialAttributes(this.getUserName() + ":" + this.getUrl(), this.getUserName(), this.getClass(), false);
         return PasswordSafe.getInstance().getPassword(attributes);
     }
 
     public boolean hasAllProjectSettings()
     {
-        return (getNsEmail() != null && !getNsEmail().isEmpty() &&
-                getNsEnvironment() != null && !getNsEnvironment().isEmpty());
+        return (getUserName() != null && !getUserName().isEmpty() &&
+                getUrl() != null && !getUrl().isEmpty());
     }
-
-//    public NSAccount getNSAccountForProject() {
-//        NSRolesRestServiceController nsRolesRestServiceController = new NSRolesRestServiceController();
-//
-//        String nsAccounts = nsRolesRestServiceController.getNSAccounts(getNsEmail(), getProjectPassword(), getNsEnvironment());
-//
-//        NSAccount projectNSAccount = null;
-//
-//        if (nsAccounts != null) {
-//            for (NSAccount account : nsAccounts) {
-//                if (account.getAccountName().equals(getNsAccountName()) &&
-//                        account.getAccountId().equals(getNsAccount())) {
-//                    projectNSAccount = account;
-//                    break;
-//                }
-//            }
-//        }
-//
-//        return projectNSAccount;
-//    }
 }

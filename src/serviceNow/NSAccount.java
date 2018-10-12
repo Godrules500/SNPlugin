@@ -25,10 +25,6 @@ public class NSAccount implements Comparable<NSAccount> {
         this.systemDomain                    = systemDomain;
     }
 
-    public String getAccountId() {
-        return accountId;
-    }
-
     public String getAccountName() {
         return accountName;
     }
