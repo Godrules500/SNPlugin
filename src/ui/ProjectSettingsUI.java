@@ -10,16 +10,13 @@ public class ProjectSettingsUI extends JDialog {
 
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JTextField nsAccountNameField;
-    private JTextField nsAccountIdField;
-    private JLabel nsEnvironmentLabel;
-    private JTextField nsEnvironmentField;
-    private JLabel nsAccountEmailLabel;
-    private JTextField nsAccountEmailField;
-    private JTextField nsAccountRoleField;
-    private JTextField nsRootFolderField;
+    private JTextField txtUrl;
+    private JTextField txtUserName;
+    private JLabel lblUrl;
 
+    private JLabel lblUserName;
     private JPanel contentPane;
+    private JTextField txtCompanyCode;
 
     private Project project;
 
@@ -68,9 +65,8 @@ public class ProjectSettingsUI extends JDialog {
 
     private void setProjectSettingsUIFields() {
         ProjectSettingsController projectSettingsController = new ProjectSettingsController(this.project);
-        this.nsAccountNameField.setText(projectSettingsController.getNsAccountName());
-        this.nsAccountIdField.setText(projectSettingsController.getNsAccount());
-        this.nsAccountEmailField.setText(projectSettingsController.getNsEmail());
-        this.nsAccountRoleField.setText(projectSettingsController.getNsAccountRole());
+        this.txtUrl.setText(projectSettingsController.getUrl());
+        this.txtUserName.setText(projectSettingsController.getUserName());
+        this.txtCompanyCode.setText(projectSettingsController.getCompanyCode());
     }
 }
