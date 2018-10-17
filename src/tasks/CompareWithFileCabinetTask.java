@@ -3,23 +3,15 @@ package tasks;
 import actions.ProjectHelper;
 import com.intellij.diff.DiffContentFactory;
 import com.intellij.diff.DiffManager;
-import com.intellij.diff.DiffRequestFactory;
 import com.intellij.diff.contents.DiffContent;
-import com.intellij.diff.contents.DocumentContent;
-import com.intellij.diff.requests.ContentDiffRequest;
 import com.intellij.diff.requests.DiffRequest;
 import com.intellij.diff.requests.SimpleDiffRequest;
-import com.intellij.diff.util.DiffUserDataKeys;
-import com.intellij.diff.util.Side;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import projectsettings.ProjectSettingsController;
@@ -36,11 +28,11 @@ public class CompareWithFileCabinetTask implements Runnable
     private Project project;
     private VirtualFile[] projectFiles;
     private ProjectHelper projectHelper = new ProjectHelper();
-    private serviceNow.SNClient SNClient;
+    private controller.SNClient SNClient;
     private ProjectSettingsController projectSettingsController;
     private DecimalFormat decimalFormat = new DecimalFormat("##.##");
 
-    public CompareWithFileCabinetTask(Project project, VirtualFile[] files, serviceNow.SNClient SNClient, ProjectSettingsController projectSettingsController)
+    public CompareWithFileCabinetTask(Project project, VirtualFile[] files, controller.SNClient SNClient, ProjectSettingsController projectSettingsController)
     {
         this.project = project;
         this.projectFiles = files;
@@ -107,7 +99,7 @@ public class CompareWithFileCabinetTask implements Runnable
         return builder.toString();
     }
 
-    private ArrayList<String> getSelectedFileIds(String projectBaseDirectory, VirtualFile[] files, serviceNow.SNClient SNClient, ProjectSettingsController projectSettingsController)
+    private ArrayList<String> getSelectedFileIds(String projectBaseDirectory, VirtualFile[] files, controller.SNClient SNClient, ProjectSettingsController projectSettingsController)
     {
         if (files == null || files.length == 0)
         {

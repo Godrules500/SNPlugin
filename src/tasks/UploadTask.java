@@ -25,9 +25,9 @@ public class UploadTask implements Runnable
     private Project project;
     private VirtualFile[] files;
     private ProjectHelper projectHelper = new ProjectHelper();
-    private serviceNow.SNClient SNClient;
+    private controller.SNClient SNClient;
 
-    public UploadTask(Project project, VirtualFile[] files, serviceNow.SNClient SNClient)
+    public UploadTask(Project project, VirtualFile[] files, controller.SNClient SNClient)
     {
         this.project = project;
         this.files = files;

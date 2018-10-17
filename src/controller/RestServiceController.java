@@ -1,4 +1,4 @@
-package serviceNow;
+package controller;
 
 import org.codehaus.jettison.json.JSONObject;
 import org.jetbrains.annotations.Nullable;

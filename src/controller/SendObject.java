@@ -1,4 +1,4 @@
-package serviceNow;
+package controller;
 
 public class SendObject
 {

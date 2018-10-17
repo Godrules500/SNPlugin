@@ -8,8 +8,8 @@ import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
 import org.codehaus.jettison.json.JSONObject;
 import projectsettings.ProjectSettingsController;
-import serviceNow.RestServiceController;
-import serviceNow.SNClient;
+import controller.RestServiceController;
+import controller.SNClient;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -26,7 +26,7 @@ public class CredentialsUI extends JDialog
     private JLabel environmentLabel;
     private JTextField txtUrl;
     private Project project;
-    private serviceNow.SNClient SNClient;
+    private controller.SNClient SNClient;
 
     public CredentialsUI(Project project)
     {

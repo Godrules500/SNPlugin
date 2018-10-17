@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.RunnableBackgroundableWrapper;
 import com.intellij.openapi.vfs.VirtualFile;
 import projectsettings.ProjectSettingsController;
-import serviceNow.SNClient;
+import controller.SNClient;
 import tasks.UploadTask;
 
 import javax.swing.*;
