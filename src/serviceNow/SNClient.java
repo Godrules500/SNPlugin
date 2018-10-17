@@ -16,111 +16,29 @@ import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.util.stream.Stream;
 
-//import jdk.nashorn.internal.parser.JSONParser;
-//import org.codehaus.jettison.json.JSONException;
-//import org.codehaus.jettison.json.JSONObject;
-
 public class SNClient
 {
-    private NSAccount nsAccount;
-
     private String nsEnvironment;
     private String nsUserName;
-    NSRolesRestServiceController snRestService = new NSRolesRestServiceController();
+    RestServiceController snRestService = new RestServiceController();
     ProjectSettingsController settings;
 
     public SNClient(String environment, String userName)
     {
-//        this.nsAccount = account;
         this.nsEnvironment = environment;
         this.nsUserName = userName;
-
-        String nsWebServiceURL = environment;
-//        nsWebServiceURL = this.nsAccount.getProductionWebServicesDomain();
 
         // In order to use SSL forwarding for SOAP messages. Refer to FAQ for details
         System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
     }
 
-    public NSAccount getNSAccount()
-    {
-        return this.nsAccount;
-    }
-
-    //    private Passport createPassport() {
-//        RecordRef role = new RecordRef();
-//        role.setInternalId(this.nsAccount.getRoleId());
-//
-//        Passport passport = new Passport();
-//        passport.setEmail(this.nsAccount.getAccountEmail());
-//        passport.setPassword(this.nsAccount.getAccountPassword());
-//        passport.setAccount(this.nsAccount.getAccountId());
-//        passport.setRole(role);
-//        return passport;
-//    }
-//
-    public void tryToLogin() throws RemoteException
-    {
-//        Passport passport = createPassport();
-//        Status status = (_port.login(passport)).getStatus();
-//
-//        if (!status.isIsSuccess()) {
-//            throw new IllegalStateException(new Throwable("Netsuite SuiteTalk login request call was unsuccessful."));
-//        }
-    }
-
-    public String authenticate(String userName, String password, String url) throws RemoteException
-    {
-        try
-        {
-            SendObject sObj = new SendObject("authenticate", "");
-            String response = snRestService.getNSAccounts(userName, password, url, sObj);
-
-//            JSONObject resultObj = new JSONObject(response);
-
-            // print result
-            return getJsonObject(response).getString("success");
-
-        }
-        catch (Exception ex)
-        {
-            return null;
-        }
-    }
-
-    public static void writeFile1() throws IOException
-    {
-        File fout = new File("out.txt");
-        FileOutputStream fos = null;
-        try
-        {
-            fos = new FileOutputStream(fout);
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
-
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-
-        for (int i = 0; i < 10; i++)
-        {
-            bw.write("something");
-            bw.newLine();
-        }
-
-        bw.close();
-    }
-
-    public JSONObject authenticateApi(String userName, String password, String url) throws RemoteException
+    public JSONObject authenticateApi(String userName, String password, String url)
     {
         JSONObject returnObj = new JSONObject();
         try
         {
-            SendObject sObj = new SendObject("authenticate", "");
-//            url += "/api/now/table/sys_db_object?sysparm_limit=1";
             url += "/api/now/table/sys_properties?sysparm_query=name%3Dglide.appcreator.company.code&sysparm_limit=1&sysparm_limit=1";
-            String response = snRestService.Get(userName, password, url, sObj);
+            String response = snRestService.Get(userName, password, url);
 
             JSONController jsonController = new JSONController(response);
             JSONObject resultObj = jsonController.getFirstResult();
@@ -153,12 +71,14 @@ public class SNClient
             settings = new ProjectSettingsController(project);
             String password = settings.getProjectPassword();
 
-            SendObject sObj = new SendObject("compare", fileData);
+            JSONObject sendObj = new JSONObject();
+            sendObj.put("action", "compare");
+            sendObj.put("fileData", fileData);
+
             String url = getFileUrl(fp);
-            String response = snRestService.Get(this.nsUserName, password, url, sObj);
+            String response = snRestService.Get(this.nsUserName, password, url);
             JSONObject obj = (JSONObject) (getJsonObjectApi(response).get(0));
             return obj.getString("script");
-//            return getJsonObjectApi(response).getString(0);//.getString("fileData");
         }
         catch (Exception ex)
         {
@@ -166,54 +86,6 @@ public class SNClient
         }
     }
 
-    public String downloadFileOld(String fileData, Project project) throws RemoteException
-    {
-        try
-        {
-            settings = new ProjectSettingsController(project);
-            String password = settings.getProjectPassword();
-
-            SendObject sObj = new SendObject("compare", fileData);
-            String response = snRestService.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
-
-//            File myF = new File(getJsonObject(response).getString("fileData"), "test.js");
-
-//            PrintWriter writer = new PrintWriter(response, "UTF-8");
-//            writer.println(response);
-//            writer.close();
-
-//            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(myF), "UTF8"));
-//            String str;
-//
-//            while ((str = in.readLine()) != null)
-//            {
-//                System.out.println(str);
-//            }
-//
-//            in.close();
-
-//            String s = new String(myF.toString(), StandardCharsets.UTF_8)
-//            String d = new String(myF.getCon.getContent(), StandardCharsets.UTF_8)
-
-//            final DiffContent remoteFileContent = DiffContentFactory.getInstance().create(new String(remoteFile.getContent(), StandardCharsets.UTF_8));
-//            JSONObject jsnobject = new JSONObject(myF.toString());
-//            JSONArray jsonArray = jsnobject.getJSONArray();
-//            for (int i = 0; i < jsonArray.length(); i++)
-//            {
-//                JSONObject explrObject = jsonArray.getJSONObject(i);
-//            }
-
-//            JSONObject resultObj = new JSONObject(response);
-
-            // print result
-//            return new File(getJsonObject(response).getString("fileData"));
-            return getJsonObject(response).getString("fileData");
-        }
-        catch (Exception ex)
-        {
-            return null;
-        }
-    }
 
     private static String readLineByLineJava8(String filePath)
     {
@@ -229,30 +101,6 @@ public class SNClient
         return contentBuilder.toString();
     }
 
-    public JSONObject uploadFileOld(VirtualFile file, Project project) throws RemoteException
-    {
-        try
-        {
-            File vFile = new File(file.getPath());
-            String fileData = readLineByLineJava8(vFile.getPath());
-//            String fileData = loadFile(vFile.getName()).toString();
-            settings = new ProjectSettingsController(project);
-            String password = settings.getProjectPassword();
-
-            SendObject sObj = new SendObject("upload", fileData);
-            String response = snRestService.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
-
-            return getJsonObject(response);
-
-            // print result
-//            return getJsonData(resultObj, "result");
-
-        }
-        catch (Exception ex)
-        {
-            return null;
-        }
-    }
 
     public String getFileUrl(FileParser fp) throws UnsupportedEncodingException
     {
@@ -334,9 +182,6 @@ public class SNClient
 
         response = snRestService.Post(this.nsUserName, password, url, sendObj);
         return Boolean.parseBoolean(response);
-//        obj = (JSONObject) (getJsonObjectApi(response).get(0));
-//        obj.getString("script");
-//        return true;
     }
 
     private boolean ModifyFile(String fileData, String password, FileParser fp, String sys_id) throws UnsupportedEncodingException, JSONException
@@ -355,15 +200,11 @@ public class SNClient
             return true;
         }
         return false;
-//        obj = (JSONObject) (getJsonObjectApi(response).get(0));
-//        obj.getString("script");
-//        return true;
     }
 
     private JSONObject checkIfFileExists(String fileData, String password, String url) throws JSONException
     {
-        SendObject sObj = new SendObject("upload", fileData);
-        String response = snRestService.Get(this.nsUserName, password, url, sObj);
+        String response = snRestService.Get(this.nsUserName, password, url);
         if (getJsonObjectApi(response).length() >= 1)
         {
             return (JSONObject) (getJsonObjectApi(response).get(0));
@@ -381,33 +222,33 @@ public class SNClient
         return jsonObj;
     }
 
-    private JSONObject getJsonObject(String response) throws JSONException
-    {
-        JSONObject obj = new JSONObject(response);
-        JSONObject jsonObj = obj.getJSONObject("result");
-        return jsonObj;
-    }
-
-    private byte[] loadFile(String sFileName)
-    {
-        InputStream inFile = null;
-        byte[] data = null;
-
-        try
-        {
-            File file = new File(sFileName);
-            inFile = new FileInputStream(file);
-            data = new byte[(int) file.length()];
-            inFile.read(data, 0, (int) file.length());
-            inFile.close();
-        }
-        catch (Exception ex)
-        {
-            return null;
-        }
-
-        return data;
-    }
+//    private JSONObject getJsonObject(String response) throws JSONException
+//    {
+//        JSONObject obj = new JSONObject(response);
+//        JSONObject jsonObj = obj.getJSONObject("result");
+//        return jsonObj;
+//    }
+//
+//    private byte[] loadFile(String sFileName)
+//    {
+//        InputStream inFile = null;
+//        byte[] data = null;
+//
+//        try
+//        {
+//            File file = new File(sFileName);
+//            inFile = new FileInputStream(file);
+//            data = new byte[(int) file.length()];
+//            inFile.read(data, 0, (int) file.length());
+//            inFile.close();
+//        }
+//        catch (Exception ex)
+//        {
+//            return null;
+//        }
+//
+//        return data;
+//    }
 
 //    public String searchFile(String fileName, String parentFolderId, String projectSettingsRootFolderId) throws RemoteException {
 //        RecordRef parentFolderRef = new RecordRef();
@@ -455,5 +296,120 @@ public class SNClient
 //        }
 //
 //        return null;
+//    }
+
+
+
+    //    private Passport createPassport() {
+//        RecordRef role = new RecordRef();
+//        role.setInternalId(this.nsAccount.getRoleId());
+//
+//        Passport passport = new Passport();
+//        passport.setEmail(this.nsAccount.getAccountEmail());
+//        passport.setPassword(this.nsAccount.getAccountPassword());
+//        passport.setAccount(this.nsAccount.getAccountId());
+//        passport.setRole(role);
+//        return passport;
+//    }
+//
+//    public void tryToLogin() throws RemoteException
+//    {
+////        Passport passport = createPassport();
+////        Status status = (_port.login(passport)).getStatus();
+////
+////        if (!status.isIsSuccess()) {
+////            throw new IllegalStateException(new Throwable("Service Now login request call was unsuccessful."));
+////        }
+//    }
+
+//    public String authenticate(String userName, String password, String url) throws RemoteException
+//    {
+//        try
+//        {
+//            SendObject sObj = new SendObject("authenticate", "");
+//            String response = snRestService.getNSAccounts(userName, password, url, sObj);
+//
+////            JSONObject resultObj = new JSONObject(response);
+//
+//            // print result
+//            return getJsonObject(response).getString("success");
+//
+//        }
+//        catch (Exception ex)
+//        {
+//            return null;
+//        }
+//    }
+//    public String downloadFileOld(String fileData, Project project) throws RemoteException
+//    {
+//        try
+//        {
+//            settings = new ProjectSettingsController(project);
+//            String password = settings.getProjectPassword();
+//
+//            SendObject sObj = new SendObject("compare", fileData);
+//            String response = snRestService.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
+//
+////            File myF = new File(getJsonObject(response).getString("fileData"), "test.js");
+//
+////            PrintWriter writer = new PrintWriter(response, "UTF-8");
+////            writer.println(response);
+////            writer.close();
+//
+////            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(myF), "UTF8"));
+////            String str;
+////
+////            while ((str = in.readLine()) != null)
+////            {
+////                System.out.println(str);
+////            }
+////
+////            in.close();
+//
+////            String s = new String(myF.toString(), StandardCharsets.UTF_8)
+////            String d = new String(myF.getCon.getContent(), StandardCharsets.UTF_8)
+//
+////            final DiffContent remoteFileContent = DiffContentFactory.getInstance().create(new String(remoteFile.getContent(), StandardCharsets.UTF_8));
+////            JSONObject jsnobject = new JSONObject(myF.toString());
+////            JSONArray jsonArray = jsnobject.getJSONArray();
+////            for (int i = 0; i < jsonArray.length(); i++)
+////            {
+////                JSONObject explrObject = jsonArray.getJSONObject(i);
+////            }
+//
+////            JSONObject resultObj = new JSONObject(response);
+//
+//            // print result
+////            return new File(getJsonObject(response).getString("fileData"));
+//            return getJsonObject(response).getString("fileData");
+//        }
+//        catch (Exception ex)
+//        {
+//            return null;
+//        }
+//    }
+//    public JSONObject uploadFileOld(VirtualFile file, Project project) throws RemoteException
+//    {
+//        try
+//        {
+//            File vFile = new File(file.getPath());
+//            String fileData = readLineByLineJava8(vFile.getPath());
+////            String fileData = loadFile(vFile.getName()).toString();
+//            settings = new ProjectSettingsController(project);
+//            String password = settings.getProjectPassword();
+//
+//            SendObject sObj = new SendObject("upload", fileData);
+//            String response = snRestService.getNSAccounts(this.nsUserName, password, this.nsEnvironment, sObj);
+//
+//            return getJsonObject(response);
+//
+//            // print result
+////            return getJsonData(resultObj, "result");
+//
+//        }
+//        catch (Exception ex)
+//        {
+//            return null;
+//        }
 //    }
 }

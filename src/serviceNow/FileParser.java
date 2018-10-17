@@ -7,17 +7,20 @@ public class FileParser
     public String ApiName;
     public String FileID;
     public String Table;
-    public String SNScriptType;
-    public String UpdateName;
+    public String SNScriptType = "";
+    public String UpdateName = "";
 
     public FileParser(String fileData)
     {
         getJSDocs(fileData);
     }
 
+    /**
+     * Read and parse the JSDocs
+     * @param fileData
+     */
     private void getJSDocs(String fileData)
     {
-        fileData.indexOf("/**");
         int start = fileData.indexOf("/**") + 3;
         int end = fileData.indexOf("*/") - 1;
         String[] settings = fileData.substring(start, end).split("\\*");
@@ -61,6 +64,10 @@ public class FileParser
         }
     }
 
+    /**
+     * Get the column that holds the script code.
+     * @return name of script column
+     */
     public String getScriptColumn()
     {
         switch (SNScriptType.toUpperCase())

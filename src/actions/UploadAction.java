@@ -56,7 +56,7 @@ public class UploadAction extends AnAction
             return;
         }
 
-        RunnableBackgroundableWrapper wrapper = new RunnableBackgroundableWrapper(e.getProject(), "", new UploadTask(project, files, SNClient, projectSettingsController));
+        RunnableBackgroundableWrapper wrapper = new RunnableBackgroundableWrapper(e.getProject(), "", new UploadTask(project, files, SNClient));
         ProgressWindow progressIndicator = new ProgressWindow(true, project);
         progressIndicator.setIndeterminate(true);
 

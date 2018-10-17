@@ -9,9 +9,9 @@ import com.intellij.openapi.project.Project;
 public class ProjectSettingsController
 {
 
-    final private String PROJECT_SETTING_EMAIL = "nsProjectEmail";
-    final private String PROJECT_SETTING_ENVIRONMENT = "nsEnvironment";
-    final private String PROJECT_SETTING_COMPANYCODE = "nsCompanyCode";
+    final private String PROJECT_SETTING_USERNAME = "snUserName";
+    final private String PROJECT_SETTING_URL = "snURL";
+    final private String PROJECT_SETTING_COMPANYCODE = "snCompanyCode";
 
     private final PropertiesComponent propertiesComponent;
 
@@ -22,14 +22,14 @@ public class ProjectSettingsController
 
     public String getUserName()
     {
-        return propertiesComponent.getValue(PROJECT_SETTING_EMAIL);
+        return propertiesComponent.getValue(PROJECT_SETTING_USERNAME);
     }
 
-    public void setUserName(String nsEmail)
+    public void setUserName(String userName)
     {
-        if (nsEmail != null && !nsEmail.isEmpty())
+        if (userName != null && !userName.isEmpty())
         {
-            propertiesComponent.setValue(PROJECT_SETTING_EMAIL, nsEmail);
+            propertiesComponent.setValue(PROJECT_SETTING_USERNAME, userName);
         }
     }
 
@@ -48,14 +48,14 @@ public class ProjectSettingsController
 
     public String getUrl()
     {
-        return propertiesComponent.getValue(PROJECT_SETTING_ENVIRONMENT);
+        return propertiesComponent.getValue(PROJECT_SETTING_URL);
     }
 
-    public void setNsEnvironment(String nsEnvironment)
+    public void setURL(String nsEnvironment)
     {
         if (nsEnvironment != null && !nsEnvironment.isEmpty())
         {
-            propertiesComponent.setValue(PROJECT_SETTING_ENVIRONMENT, nsEnvironment);
+            propertiesComponent.setValue(PROJECT_SETTING_URL, nsEnvironment);
         }
     }
 

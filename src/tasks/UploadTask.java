@@ -16,7 +16,6 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
-import projectsettings.ProjectSettingsController;
 
 import javax.swing.*;
 
@@ -27,14 +26,12 @@ public class UploadTask implements Runnable
     private VirtualFile[] files;
     private ProjectHelper projectHelper = new ProjectHelper();
     private serviceNow.SNClient SNClient;
-    private ProjectSettingsController projectSettingsController;
 
-    public UploadTask(Project project, VirtualFile[] files, serviceNow.SNClient SNClient, ProjectSettingsController projectSettingsController)
+    public UploadTask(Project project, VirtualFile[] files, serviceNow.SNClient SNClient)
     {
         this.project = project;
         this.files = files;
         this.SNClient = SNClient;
-        this.projectSettingsController = projectSettingsController;
     }
 
     @Override
@@ -67,9 +64,7 @@ public class UploadTask implements Runnable
 
         /*
          * If uploading a directory of files, then recursively call uploadFiles with the children
-         * files of the directory to upload them. Otherwise, for each file, attempt to get the NetSuite
-         * parent folder ID of the file being uploaded (folders are created if they do not exist)
-         * and upload the file into its parent directory.
+         * files of the directory to upload them.
          */
         for (VirtualFile file : files)
         {
@@ -80,29 +75,22 @@ public class UploadTask implements Runnable
             else
             {
                 saveDocument(file);
-                String fileNetSuiteParentFolderId = getFileNetSuiteParentFolderId(file, projectRootDirectory);
+                String localPath = getLocalFilePath(file, projectRootDirectory);
 
-                if (fileNetSuiteParentFolderId != null)
+                if (localPath != null)
                 {
                     progessIndicator.setFraction(0);
                     progessIndicator.setText("Uploading File: " + file.getName());
                     try
                     {
                         Boolean result = SNClient.startUploadFile(file, this.project);
-//                        Boolean result = (Boolean) response.get("success");
-//                        WriteResponse response = SNClient.startUploadFile(file.getName(), file.getPath(), SNClient.searchFile(file.getName(), fileNetSuiteParentFolderId, projectSettingsController.getNsRootFolder()), fileNetSuiteParentFolderId, "");
-//                        if (!response.getStatus().isIsSuccess())
-                        if(result.equals(true))
-                        {
-
-                        }
 
 //                        if(!SNClient.getJsonData(response, "success").equals("success"))
                         if(result.equals(false))
                         {
                             displayUploadResultBalloonMessage(file.getName(), false);
                             JOptionPane.showMessageDialog(null, "File: " + file.getName() + "\n" +
-                                            "Service Now File Cabinet Parent Folder ID: " + fileNetSuiteParentFolderId + "\n" +
+                                            "Service Now File Cabinet Parent Folder ID: " + localPath + "\n" +
                                             "Error Details: " + "Unable to connect. Please check your settings and try again.",
                                     "FILE UPLOAD ERROR",
                                     JOptionPane.ERROR_MESSAGE);
@@ -122,7 +110,7 @@ public class UploadTask implements Runnable
         }
     }
 
-    private String getFileNetSuiteParentFolderId(VirtualFile file, String projectRootDirectory)
+    private String getLocalFilePath(VirtualFile file, String projectRootDirectory)
     {
         String projectFilePathFromRootDirectory = projectHelper.getProjectFilePathFromRootDirectory(file, projectRootDirectory);
 
@@ -130,34 +118,7 @@ public class UploadTask implements Runnable
         {
             return null;
         }
-
-        String[] foldersAndFile = projectFilePathFromRootDirectory.split("/");
-//        String currentParentFolder = projectSettingsController.getNsRootFolder();
-//
-//        for (int i = 0; i < foldersAndFile.length; i++)
-//        {
-//            if (i + 1 != foldersAndFile.length)
-//            {
-//                try
-//                {
-//                    String folderId = SNClient.searchFolder(foldersAndFile[i], currentParentFolder);
-//
-//                    if (folderId == null)
-//                    {
-//                        folderId = SNClient.createFolder(foldersAndFile[i], currentParentFolder);
-//                    }
-//
-//                    currentParentFolder = folderId;
-//                }
-//                catch (Exception ex)
-//                {
-//                    JOptionPane.showMessageDialog(null, "Error Searching/Creating Folder: " + ex.toString(), "ERROR", JOptionPane.ERROR_MESSAGE);
-//                    currentParentFolder = null;
-//                }
-//            }
-//        }
-//        return currentParentFolder;
-        return "";
+        return projectFilePathFromRootDirectory;
     }
 
     private void displayUploadResultBalloonMessage(String fileName, Boolean isSuccess)

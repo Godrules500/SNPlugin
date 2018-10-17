@@ -13,39 +13,23 @@ import com.intellij.diff.util.DiffUserDataKeys;
 import com.intellij.diff.util.Side;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import projectsettings.ProjectSettingsController;
 
 import javax.swing.*;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-
-import com.intellij.ide.highlighter.ArchiveFileType;
-import com.intellij.openapi.actionSystem.*;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class CompareWithFileCabinetTask implements Runnable
 {
@@ -251,38 +235,14 @@ public class CompareWithFileCabinetTask implements Runnable
         return null;
     }
 
-    private void showDiffForFiles(String remoteFile, VirtualFile localFile) throws IOException
+    private void showDiffForFiles(String remoteFile, VirtualFile localFile)
     {
         if (remoteFile == null || localFile == null)
         {
             return;
         }
 
-//        String s = new String(localFile.contentsToByteArray());
-//        DocumentContent content1 = DiffContentFactory.getInstance().create(remoteFile, localFile.getFileType());
-//        DocumentContent content2 = DiffContentFactory.getInstance().create(s, localFile);
-//        SimpleDiffRequest request = new SimpleDiffRequest("Window Title", content1, content2, "Title 1", "Title 2");
-//
-//
-//        ApplicationManager.getApplication().invokeLater(new Runnable()
-//        {
-//            @Override
-//            public void run()
-//            {
-//                ApplicationManager.getApplication().runWriteAction(new Runnable()
-//                {
-//                    @Override
-//                    public void run()
-//                    {
-//                        DiffManager.getInstance().showDiff(project, request);
-//                    }
-//                });
-//            }
-//        }, ModalityState.NON_MODAL);
-
-        final DiffContent remoteFileContent = DiffContentFactory.getInstance().create(remoteFile);
-//        final DiffContent remoteFileContent = DiffContentFactory.getInstance().create(new String(remoteFile.getContent(), StandardCharsets.UTF_8));
-
+        final DiffContent remoteFileContent = DiffContentFactory.getInstance().create(remoteFile, localFile.getFileType());
         final DiffContent localFileContent = DiffContentFactory.getInstance().create(project, localFile);
 
         DiffRequest dr = new SimpleDiffRequest("Service Now File Cabinet Compare", remoteFileContent, localFileContent, "Service NowFile Cabinet - " + localFile.getName(), "Local File - " + localFile.getName());
@@ -301,47 +261,5 @@ public class CompareWithFileCabinetTask implements Runnable
                 });
             }
         }, ModalityState.NON_MODAL);
-    }
-
-    //    public void actionPerformed(VirtualFile selectedFile, String downloadedFile) throws IOException
-    public void actionPerformed(String downloadedFile, VirtualFile selectedFile) throws IOException
-    {
-        DiffRequest diffData = getDiffRequest(downloadedFile, selectedFile);
-//        if (diffData == null) return;
-//        final DiffContent[] contents = (DiffContent[]) diffData.getContents();
-//        final FileDocumentManager documentManager = FileDocumentManager.getInstance();
-//        ApplicationManager.getApplication().runWriteAction(() ->
-//        {
-//            for (DiffContent content : contents)
-//            {
-//                Document document = (Document) content;
-//                if (document != null)
-//                {
-//                    documentManager.saveDocument(document);
-//                }
-//            }
-//        });
-        DiffManager.getInstance().showDiff(this.project, diffData);
-    }
-
-    protected DiffRequest getDiffRequest(String downloadedFile, VirtualFile selectedFile) throws IOException
-    {
-        VirtualFile f = selectedFile;
-        f.setBinaryContent(downloadedFile.getBytes());
-        assert selectedFile != null && downloadedFile != null;
-
-        ContentDiffRequest request = DiffRequestFactory.getInstance().createFromFiles(project, selectedFile, f);
-
-        DiffContent editorContent = request.getContents().get(1);
-        if (editorContent instanceof DocumentContent)
-        {
-            Editor[] editors = EditorFactory.getInstance().getEditors(((DocumentContent) editorContent).getDocument());
-            if (editors.length != 0)
-            {
-                request.putUserData(DiffUserDataKeys.SCROLL_TO_LINE, Pair.create(Side.RIGHT, editors[0].getCaretModel().getLogicalPosition().line));
-            }
-        }
-
-        return request;
     }
 }

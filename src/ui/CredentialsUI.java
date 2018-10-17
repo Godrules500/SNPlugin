@@ -8,7 +8,7 @@ import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
 import org.codehaus.jettison.json.JSONObject;
 import projectsettings.ProjectSettingsController;
-import serviceNow.NSRolesRestServiceController;
+import serviceNow.RestServiceController;
 import serviceNow.SNClient;
 
 import javax.swing.*;
@@ -42,12 +42,12 @@ public class CredentialsUI extends JDialog
 
         if (projectSettingsController.hasAllProjectSettings())
         {
-            String nsPassword = projectSettingsController.getProjectPassword();
-            if (nsPassword != null && !nsPassword.isEmpty())
+            String password = projectSettingsController.getProjectPassword();
+            if (password != null && !password.isEmpty())
             {
                 emailField.setText(projectSettingsController.getUserName());
                 txtUrl.setText(projectSettingsController.getUrl());
-                passwordField.setText(nsPassword);
+                passwordField.setText(password);
             }
         }
 
@@ -91,11 +91,11 @@ public class CredentialsUI extends JDialog
         String url = txtUrl.getText();
         String password = String.valueOf(passwordField.getPassword());
 
-        ProjectSettingsController nsProjectSettingsController = new ProjectSettingsController(this.project);
-        nsProjectSettingsController.setUserName(emailField.getText());
-        nsProjectSettingsController.setNsEnvironment(txtUrl.getText());
-        nsProjectSettingsController.saveProjectPassword(email, password, url);
-        nsProjectSettingsController.setCompanyCode(companyCode);
+        ProjectSettingsController projectSettingsController = new ProjectSettingsController(this.project);
+        projectSettingsController.setUserName(emailField.getText());
+        projectSettingsController.setURL(txtUrl.getText());
+        projectSettingsController.saveProjectPassword(email, password, url);
+        projectSettingsController.setCompanyCode(companyCode);
     }
 
     private void onNext()
@@ -109,35 +109,34 @@ public class CredentialsUI extends JDialog
         this.setVisible(false);
 
 
-        NSRolesRestServiceController nsRolesRestServiceController = new NSRolesRestServiceController();
-        JSONObject nsAccounts;
+        RestServiceController restServiceController = new RestServiceController();
+        JSONObject authResults;
         Boolean success = false;
         String companyCode = "";
         String error = "";
         try
         {
             this.SNClient = new SNClient(txtUrl.getText(), emailField.getText());
-            nsAccounts = this.SNClient.authenticateApi(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
-            if(nsAccounts != null)
+            authResults = this.SNClient.authenticateApi(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
+            if(authResults != null)
             {
-                success = (Boolean)nsAccounts.get("success");
-                if(nsAccounts.has("companyCode"))
+                success = (Boolean)authResults.get("success");
+                if(authResults.has("companyCode"))
                 {
-                    companyCode = nsAccounts.getString("companyCode");
+                    companyCode = authResults.getString("companyCode");
                 }
-                else if(nsAccounts.has("error"))
+                else if(authResults.has("error"))
                 {
-                    error = nsAccounts.getString("error");
+                    error = authResults.getString("error");
                 }
             }
         }
         catch(Exception e)
         {
-            nsAccounts = null;
+            authResults = null;
         }
-//        String nsAccounts = nsRolesRestServiceController.getNSAccounts(emailField.getText(), String.valueOf(passwordField.getPassword()), txtUrl.getText());
 
-        if (nsAccounts == null || success.equals(false))
+        if (authResults == null || success.equals(false))
         {
 //            JOptionPane.showMessageDialog(null, "Error getting Service Now Accounts from Roles Rest Service.\nPlease verify that your e-mail and password are correct.", "ERROR", JOptionPane.ERROR_MESSAGE);
             JOptionPane.showMessageDialog(null, "Error authenticating Service Now Credentials. Please check your configuration and try again.\n" +
