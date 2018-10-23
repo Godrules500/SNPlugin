@@ -103,19 +103,28 @@ public class RestServiceController
         {
             HttpURLConnection httpCon = SendRequest(userName, password, url, httpMethod, sObj);
 
-            if (httpCon.getResponseCode() == 201)
+            if (httpCon.getResponseCode() >= 200 || httpCon.getResponseCode() <= 299)
             {
-                return "true";
+                return getHttpResponse(httpCon);
             }
             else
             {
-                return "false";
+                throw new Exception(httpCon.getErrorStream().toString());
             }
         }
         catch (Exception ex)
         {
             return null;
         }
+        //TODO look into later
+//        HttpURLConnection httpConn = (HttpURLConnection)_urlConnection;
+//        InputStream _is;
+//        if (httpConn.getResponseCode() < HttpURLConnection.HTTP_BAD_REQUEST) {
+//            _is = httpConn.getInputStream();
+//        } else {
+//            /* error from server */
+//            _is = httpConn.getErrorStream();
+//        }
     }
 
     /**

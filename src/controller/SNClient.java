@@ -8,6 +8,9 @@ import org.codehaus.jettison.json.JSONObject;
 import projectsettings.ProjectSettingsController;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -62,18 +65,10 @@ public class SNClient
         }
     }
 
-    public String downloadFile(String fileData, Project project) throws RemoteException
+    public String downloadTable(FileParser fp, String password) throws RemoteException
     {
         try
         {
-            FileParser fp = new FileParser(fileData);
-            settings = new ProjectSettingsController(project);
-            String password = settings.getProjectPassword();
-
-            JSONObject sendObj = new JSONObject();
-            sendObj.put("action", "compare");
-            sendObj.put("fileData", fileData);
-
             String url = getFileUrl(fp);
             String response = snRestService.Get(this.nsUserName, password, url);
             JSONObject obj = (JSONObject) (getJsonObjectApi(response).get(0));
@@ -85,6 +80,29 @@ public class SNClient
         }
     }
 
+    public String downloadFile(String fileData, Project project) throws RemoteException
+    {
+        try
+        {
+            FileParser fp = new FileParser(fileData);
+            settings = new ProjectSettingsController(project);
+            String password = settings.getProjectPassword();
+
+            if (fp.Table.equals("sys_metadata"))
+            {
+
+            }
+
+            String url = getFileUrl(fp);
+            String response = snRestService.Get(this.nsUserName, password, url);
+            JSONObject obj = (JSONObject) (getJsonObjectApi(response).get(0));
+            return obj.getString("script");
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
 
     private static String readLineByLineJava8(String filePath)
     {
@@ -100,8 +118,17 @@ public class SNClient
         return contentBuilder.toString();
     }
 
-
     public String getFileUrl(FileParser fp) throws UnsupportedEncodingException
+    {
+        String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
+//        "sysparm_query=sys_scope=8d6379554f812300855601bda310c70e^sys_class_name!=sys_metadata_delete^sys_nameLIKEtruck^ORsys_update_nameLIKEtruck"
+//        String url = "sys_scope.nameSTARTSWITHApplication^sys_class_name!=sys_metadata_delete^sys_nameSTARTSWITHx_174422_vehicle_truck";
+        String queryParam = "?sysparm_query=sys_scope.name=" + URLEncoder.encode(fp.AppName + "^sys_name=" + fp.FileName, "UTF-8");
+        url += queryParam;
+        return url;
+    }
+
+    public String getTableUrl(FileParser fp) throws UnsupportedEncodingException
     {
         String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
         String queryParam = "?sysparm_query=sys_scope.name=" + URLEncoder.encode(fp.AppName + "^sys_name=" + fp.FileName, "UTF-8");
@@ -119,6 +146,16 @@ public class SNClient
         return url;
     }
 
+    public String getAppUrl(FileParser fp) throws UnsupportedEncodingException
+    {
+        String url = this.nsEnvironment + "/api/now/table/sys_app";
+        String queryParam = "?sysparm_query=name=" + URLEncoder.encode(fp.AppName, "UTF-8");
+        String fields = "&sysparm_fields=sys_id";
+        url += queryParam + fields;
+
+        return url;
+    }
+
     public String uploadFileUrl(FileParser fp, String sys_id) throws UnsupportedEncodingException
     {
         String url = this.nsEnvironment + "/api/now/table/" + fp.Table;
@@ -128,6 +165,24 @@ public class SNClient
         }
 
         return url;
+    }
+
+    public String uploadAppUrl() throws UnsupportedEncodingException
+    {
+        String url = this.nsEnvironment + "/api/now/table/sys_app";
+        return url;
+    }
+
+    public String getAppID(FileParser fp, String fileData, String password, String companyCode) throws JSONException, UnsupportedEncodingException
+    {
+        String appUrl = getAppUrl(fp);
+//        String appSysId = checkIfAppScopeExists(password, appUrl).getString("sys_id");
+        String appSysId = getObjectFromSN(password, appUrl).getString("sys_id");
+        if (appSysId.isEmpty())
+        {
+            appSysId = AddApp(fileData, password, fp, companyCode);
+        }
+        return appSysId;
     }
 
     public boolean startUploadFile(VirtualFile file, Project project) throws RemoteException
@@ -140,15 +195,18 @@ public class SNClient
             FileParser fp = new FileParser(fileData);
             String url = getFileIdUrl(fp);
 
-            JSONObject obj = checkIfFileExists(fileData, password, url);
+            String appSysId = getAppID(fp, fileData, password, settings.getCompanyCode());
+
+            JSONObject obj = checkIfFileExists(password, url);
+
             String sys_id = obj.getString("sys_id");
             if (!sys_id.isEmpty())
             {
-                return ModifyFile(fileData, password, fp, sys_id);
+                return ModifyFile(fileData, password, fp, sys_id, appSysId);
             }
             else
             {
-                return AddFile(fileData, password, fp, sys_id, settings.getCompanyCode());
+                return AddFile(fileData, password, fp, sys_id, settings.getCompanyCode(), appSysId);
             }
         }
         catch (Exception ex)
@@ -162,13 +220,12 @@ public class SNClient
         return "x_" + companyCode + "_";
     }
 
-    private Boolean AddFile(String fileData, String password, FileParser fp, String sys_id, String companyCode) throws UnsupportedEncodingException, JSONException
+    private Boolean AddFile(String fileData, String password, FileParser fp, String sys_id, String companyCode, String appSysId) throws UnsupportedEncodingException, JSONException
     {
         String url;
         String response;
         JSONObject obj;
         url = uploadFileUrl(fp, sys_id);
-
 
         String scope = GetAppPrefix(companyCode) + fp.AppName + "_" + fp.FileName;
 
@@ -178,12 +235,43 @@ public class SNClient
         sendObj.put("scope", scope);
         sendObj.put("name", fp.FileName);
         sendObj.put("runtime_access_tracking", "permissive");
+        sendObj.put("sys_package", appSysId);
+        sendObj.put("sys_scope", appSysId);
 
         response = snRestService.Post(this.nsUserName, password, url, sendObj);
-        return Boolean.parseBoolean(response);
+        return true;
+//        return Boolean.parseBoolean(response);
     }
 
-    private boolean ModifyFile(String fileData, String password, FileParser fp, String sys_id) throws UnsupportedEncodingException, JSONException
+    private String AddApp(String fileData, String password, FileParser fp, String companyCode) throws UnsupportedEncodingException, JSONException
+    {
+        String url;
+        String response;
+        String appId = "";
+        JSONObject obj;
+        url = uploadAppUrl();
+
+        String scope = GetAppPrefix(companyCode) + fp.AppName + "_" + fp.FileName;
+
+        JSONObject sendObj = new JSONObject();
+        sendObj.put(fp.getScriptColumn(), fileData);
+        sendObj.put("source", scope);
+        sendObj.put("scope", scope);
+        sendObj.put("name", fp.AppName);
+        sendObj.put("runtime_access_tracking", "permissive");
+
+        response = snRestService.Post(this.nsUserName, password, url, sendObj);
+        appId = new JSONController(response).getFirstResult().getString("sys_id");
+        return appId;
+//        if (getJsonObjectApi(response).length() >= 1)
+//        {
+//            obj = (JSONObject) (getJsonObjectApi(response).get(0));
+//            appId = obj.getString("sys_id");
+//        }
+//        return appId;
+    }
+
+    private boolean ModifyFile(String fileData, String password, FileParser fp, String sys_id, String appSysId) throws UnsupportedEncodingException, JSONException
     {
         String url;
         String response;
@@ -201,7 +289,36 @@ public class SNClient
         return false;
     }
 
-    private JSONObject checkIfFileExists(String fileData, String password, String url) throws JSONException
+    private JSONObject checkIfFileExists(String password, String url) throws JSONException
+    {
+        String response = snRestService.Get(this.nsUserName, password, url);
+        if (getJsonObjectApi(response).length() >= 1)
+        {
+            return (JSONObject) (getJsonObjectApi(response).get(0));
+        }
+        else
+        {
+            return new JSONObject().put("sys_id", "");
+        }
+    }
+
+    private JSONObject getObjectFromSN(String password, String url) throws JSONException
+    {
+        String response = snRestService.Get(this.nsUserName, password, url);
+        JSONObject myObj;
+        if (getJsonObjectApi(response).length() >= 1)
+        {
+            myObj = (JSONObject) (getJsonObjectApi(response).get(0));
+        }
+        else
+        {
+            myObj = new JSONObject().put("sys_id", "");
+        }
+        return myObj;
+
+    }
+
+    private JSONObject checkIfAppScopeExists(String password, String url) throws JSONException
     {
         String response = snRestService.Get(this.nsUserName, password, url);
         if (getJsonObjectApi(response).length() >= 1)
@@ -296,7 +413,6 @@ public class SNClient
 //
 //        return null;
 //    }
-
 
 
     //    private Passport createPassport() {
