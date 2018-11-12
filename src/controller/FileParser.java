@@ -31,7 +31,7 @@ public class FileParser
             if (!setting.isEmpty())
             {
                 String col = setting.split(" ")[0];
-                String val = setting.split(" ")[1];
+                String val = setting.split(" ", 2)[1];
                 if (col.equals("@SNFileID"))
                 {
                     FileID = val;

@@ -96,7 +96,8 @@ public class SNClient
             String url = getFileUrl(fp);
             String response = snRestService.Get(this.nsUserName, password, url);
             JSONObject obj = (JSONObject) (getJsonObjectApi(response).get(0));
-            return obj.getString("script");
+            return obj.getString(fp.getScriptColumn());
+//            return obj.getString("script");
         }
         catch (Exception ex)
         {
